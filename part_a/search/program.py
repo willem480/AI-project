@@ -1,7 +1,7 @@
 # COMP30024 Artificial Intelligence, Semester 1 2026
 # Project Part A: Single Player Cascade
 
-from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, CascadeAction
+from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, CascadeAction, PlayerColor
 from .utils import render_board
 import heapq
 
@@ -18,6 +18,16 @@ def make_hashable(state : dict[Coord, CellState]):
 def rev_hashable(hashable_state):
     # Convert the frozenset of items back to a dictionary
     return dict(hashable_state)
+
+def is_goal(state : dict[Coord, CellState]):
+    for i in state.values():
+        if i.color == PlayerColor.BLUE:
+            return False
+    return True
+
+def get_next_states(state : dict[Coord, CellState]):
+    # Placeholder, replace with your logic to generate next states
+    return []
 
 def search(
     board: dict[Coord, CellState]
@@ -40,24 +50,24 @@ def search(
     # The render_board() function is handy for debugging. It will print out a
     # board state in a human-readable format. If your terminal supports ANSI
     # codes, set the `ansi` flag to True to print a colour-coded version!
-    print(render_board(board, ansi=True))
+    
 
 
     state_pq = []
     cost_to_state = {make_hashable(board): 0}
-    parents = {make_hashable(board): None}
+    parents = {make_hashable(board): (None, None)}  # Maps state to (parent_state, action_to_get_there)
     heapq.heappush(state_pq, (f_score(board, 0), make_hashable(board)))
     
 
-    while state_pq.count != 0:
-        current_state = heapq.heappop(state_pq)
-        
-    #     current = state in open_set with lowest f_score
-    #     remove current from open_set
+    while state_pq:
+        _, hashable_state = heapq.heappop(state_pq)
+        current_state = rev_hashable(hashable_state)
 
-    #     if is_goal(current):
-    #         return RECONSTRUCT_PATH(parents, current)
+        print(render_board(current_state, ansi=True))
+        if is_goal(current_state):
+            return #RECONSTRUCT_PATH(parents, current)
 
+       
     #     for each (next_state, cost) in GET_NEIGHBORS(current):
 
     #         tentative_g = g_scores[current] + cost
