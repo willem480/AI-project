@@ -44,7 +44,7 @@ def f_score(state, g_score):
 
 def make_hashable(state : dict[Coord, CellState]):
     # Convert the state dictionary to a frozenset of items for hashing
-    return tuple((i, j) for i, j in state.items())
+    return tuple(sorted((i, j) for i, j in state.items()))
 
 def rev_hashable(hashable_state):
     # Convert the frozenset of items back to a dictionary
@@ -127,6 +127,8 @@ def stack_cascade(state, coord, direction):
     step = new_state[coord].height #How much a red stack can cascade
 
     if step <= 1: return None, None
+
+    new_state.pop(coord)
 
     for move in range(1, step + 1):
         try:
