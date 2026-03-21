@@ -1,46 +1,46 @@
 # COMP30024 Artificial Intelligence, Semester 1 2026
 # Project Part A: Single Player Cascade
 
-from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, CascadeAction
+from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, CascadeAction, PlayerColor
 from .utils import render_board
 import heapq
 
-def heuristic(state):
-    h2 = 0
-    red = [] 
-    blue = []
-    for coord, cellstate in state.items():
-        if(cellstate.color == PlayerColor.Blue): #if color is blue
-            blue.append(coord) #take blue
+# def heuristic(state : dict[Coord, CellState]):
+#     h2 = 0
+#     red = [] 
+#     blue = []
+#     for coord, cellstate in state.items():
+#         if(cellstate.color == PlayerColor.BLUE): #if color is blue
+#             blue.append(coord) #take blue
 
-    for coord, cellstate in state:
-        if(cellstate.color == PlayerColor.Red):
-            red.append(coord)
+#     for coord, cellstate in state:
+#         if(cellstate.color == PlayerColor.RED):
+#             red.append(coord)
 
-    if(blue == None):
-        return 0
+#     if(blue == None):
+#         return 0
     
-    if(red == None):
-        return float('inf')
+#     if(red == None):
+#         return float('inf')
     
-    #h1:THe number of blue stacks
-    h1 = len(blue)
-    #h2: The sum of cloest distance of blue stack to cloest red stack
-    for node_blue in blue:
-        min = 0
-        for node_red in red:
-           distance = abs(node_blue.r - node_red.r) + abs(node_blue.c - node_red.c)
-           if (min < distance):
-               min = distance  
-        h2 += min
+#     #h1:THe number of blue stacks
+#     h1 = len(blue)
+#     #h2: The sum of cloest distance of blue stack to cloest red stack
+#     for node_blue in blue:
+#         min = 0
+#         for node_red in red:
+#            distance = abs(node_blue.r - node_red.r) + abs(node_blue.c - node_red.c)
+#            if (min < distance):
+#                min = distance  
+#         h2 += min
 
-    w1 = 0.6
-    w2 = 0.8
+#     w1 = 0.6
+#     w2 = 0.8
 
-    return  w1 * h1 + w2 * h2# Placeholder, replace with your heuristic calculation
+#     return  w1 * h1 + w2 * h2# Placeholder, replace with your heuristic calculation
 
 def f_score(state, g_score):
-    return g_score + heuristic(state)
+    return g_score 
 
 def make_hashable(state : dict[Coord, CellState]):
     # Convert the state dictionary to a frozenset of items for hashing
@@ -63,7 +63,7 @@ def get_next_states(state : dict[Coord, CellState]):
     # for coord,cellstate in state.items():
     #     if cellstate.color == PlayerColor.RED:
     #         if cellstate.height > 1:
-    #             result.append((state, CascadeAction(coord, Direction.Down), 1))
+    #             
                 
     return result
 
@@ -84,7 +84,7 @@ def stack_movement(state, coord, direction):
     #Move to another red stack
     elif(target in new_state and new_state[target].color == PlayerColor.RED):
         new_state[target] = CellState
-        (PlayerColor.Red, new_state[target].height + new_state[coord].height)#Pile up
+        (PlayerColor.RED, new_state[target].height + new_state[coord].height)#Pile up
         new_state.pop(coord)
 
         return MoveAction(coord, direction), new_state
@@ -98,7 +98,7 @@ def stack_movement(state, coord, direction):
         else:
             return None, None
 
-    return None, None #Red stack cannot make an movement.
+    return None, None #RED stack cannot make an movement.
 
 
 def push_stack(newstate, pushcoord, stack, direction):
@@ -176,6 +176,8 @@ def search(
 
         current_state = rev_hashable(hashable_state)
 
+        print(render_board(current_state, ansi=True))
+        stack_cascade(current_state, Coord(3, 3), Direction.Down)
         print(render_board(current_state, ansi=True))
         if is_goal(current_state):
             return #RECONSTRUCT_PATH(parents, current)
