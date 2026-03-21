@@ -56,6 +56,7 @@ def heuristic(state : dict[Coord, CellState]):
             h3.append(min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c)))
     else:
         return 0
+    
     return min(h1, max(h3))
     
 
