@@ -1,11 +1,36 @@
 # COMP30024 Artificial Intelligence, Semester 1 2026
 # Project Part A: Single Player Cascade
 
+from math import inf
 import time
 
 from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, CascadeAction, PlayerColor
 from .utils import render_board
 import heapq
+
+def min_steps_to_within_range(red_pos, n, blue_pos):
+    rx, ry = red_pos
+    bx, by = blue_pos
+    max_offset = n - 1
+
+    best = float("inf")
+
+    # Horizontal ray through blue
+    for k in range(max_offset + 1):
+        for tx, ty in ((bx + k, by), (bx - k, by)):
+            d = abs(rx - tx) + abs(ry - ty)
+            if d < best:
+                best = d
+
+    # Vertical ray through blue
+    for k in range(max_offset + 1):
+        for tx, ty in ((bx, by + k), (bx, by - k)):
+            d = abs(rx - tx) + abs(ry - ty)
+            if d < best:
+                best = d
+
+    return best
+
 
 def heuristic(state : dict[Coord, CellState]):
     
@@ -15,12 +40,22 @@ def heuristic(state : dict[Coord, CellState]):
 
     blue = [i for i in list(state.keys()) if state[i].color == PlayerColor.BLUE]
     red = [i for i in list(state.keys()) if state[i].color == PlayerColor.RED]
-    if (len(blue) > 0 and len(red) > 0):
-       h2 = min([min([distance(i, j) for j in blue]) for i in red])
-    else:
-        h2 = 0
+    h2 = 0
+    h3 =0
 
-    return min(h1, h2)
+    if (len(blue) > 0 and len(red) > 0):
+        h2 = min([min([distance(i, j) for j in blue]) for i in red])
+        
+        for i in red:
+            min_dist = inf
+            stack = None
+            for j in blue:
+                if distance(i, j) < min_dist:
+                    min_dist = distance(i, j)
+                    stack = j
+            h3 += min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c))
+    
+    return h3
 
 def distance(coord1 : Coord, coord2 : Coord):
     return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
