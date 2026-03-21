@@ -60,12 +60,21 @@ def is_goal(state : dict[Coord, CellState]):
 
 def get_next_states(state : dict[Coord, CellState]):
     result = []
-    # for coord,cellstate in state.items():
-    #     if cellstate.color == PlayerColor.RED:
-    #         if cellstate.height > 1:
-    #             
+    for coord, cellstate in state.items():
+        if(cellstate.color == PlayerColor.RED): #Must be red
+            for direction in Direction:
+                action, new_state = stack_movement(state, coord, direction)
+                if (action is not None):
+                    result.append((action, new_state))
                 
+                if (cellstate.height > 1): #pre-require
+                    action, new_state = stack_cascade(state, coord, direction)
+                    if(action is not None):
+                        result.append((action, new_state))
+                    
     return result
+                    
+
 
 def stack_movement(state, coord, direction):
     new_state = dict(state)
@@ -73,7 +82,7 @@ def stack_movement(state, coord, direction):
         target = coord + direction #The red target coord
     
     except ValueError:#out of bound
-        return
+        return None, None
     
 
     #MOVE to empty place
@@ -83,8 +92,9 @@ def stack_movement(state, coord, direction):
     
     #Move to another red stack
     elif(target in new_state and new_state[target].color == PlayerColor.RED):
-        new_state[target] = CellState
-        (PlayerColor.RED, new_state[target].height + new_state[coord].height)#Pile up
+        new_state[target] = CellState(
+            PlayerColor.RED, new_state[target].height + new_state[coord].height
+            )#Pile up
         new_state.pop(coord)
 
         return MoveAction(coord, direction), new_state
@@ -105,7 +115,7 @@ def push_stack(newstate, pushcoord, stack, direction):
     try:
         next_coord = pushcoord + direction
     except ValueError:#out of bound
-        return
+        return None, None
 
     if next_coord in newstate: #if there is a stack
         push_stack(newstate, next_coord, newstate.pop(next_coord), direction)
@@ -118,10 +128,11 @@ def stack_cascade(state, coord, direction):
     new_state = dict(state)
     step = new_state[coord].height #How much a red stack can cascade
     prev = new_state.pop(coord) #red stack move one rid forward
+
     for move in range(1, step + 1):
         try:
             target = Coord(coord.r + direction.r * move, 
-                           coord.c + direction.c * move)
+                        coord.c + direction.c * move)
         except ValueError: #out of bound
             continue #For red stack game continue
 
@@ -130,8 +141,8 @@ def stack_cascade(state, coord, direction):
 
         new_state[target] = CellState(PlayerColor.RED, 1)
 
-        
     return CascadeAction(coord, direction), new_state
+
 
 
     
