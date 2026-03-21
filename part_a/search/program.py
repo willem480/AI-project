@@ -122,12 +122,11 @@ def push_stack(newstate, pushcoord, stack, direction):
     
     newstate[next_coord] = stack #if empty
 
-
-
 def stack_cascade(state, coord, direction):
     new_state = dict(state)
     step = new_state[coord].height #How much a red stack can cascade
-    prev = new_state.pop(coord) #red stack move one rid forward
+
+    if step <= 1: return None, None
 
     for move in range(1, step + 1):
         try:
@@ -143,10 +142,11 @@ def stack_cascade(state, coord, direction):
 
     return CascadeAction(coord, direction), new_state
 
-
-
-    
-
+def reconstruct_path(parents, current, path):
+    if parents[current][0] is None:
+        return path
+    path.append(parents[current][1])
+    return reconstruct_path(parents, parents[current][0], path)
 
 
 def search(
@@ -166,53 +166,32 @@ def search(
         A list of actions (MoveAction, EatAction, or CascadeAction), or `None`
         if no solution is possible.
     """
-
-    # The render_board() function is handy for debugging. It will print out a
-    # board state in a human-readable format. If your terminal supports ANSI
-    # codes, set the `ansi` flag to True to print a colour-coded version!
     
-
-
     state_pq = []
+    path = []
     cost_to_state = {make_hashable(board): 0}
     parents = {make_hashable(board): (None, None)}  # Maps state to (parent_state, action_to_get_there)
-    heapq.heappush(state_pq, (f_score(board, 0), make_hashable(board)))
-    
+    index = 0
+    heapq.heappush(state_pq, (f_score(board, 0), index, make_hashable(board)))
+    print(render_board(board, ansi= True))
 
     while state_pq:
-        priority, hashable_state = heapq.heappop(state_pq)
+        priority, _, cur_hashable_state = heapq.heappop(state_pq)
 
-        if priority > cost_to_state[hashable_state]:
+        if priority > cost_to_state[cur_hashable_state]:
             continue  # Skip if we have already found a better path to this state
 
-        current_state = rev_hashable(hashable_state)
+        cur_state = rev_hashable(cur_hashable_state)
 
-        print(render_board(current_state, ansi=True))
-        stack_cascade(current_state, Coord(3, 3), Direction.Down)
-        print(render_board(current_state, ansi=True))
-        if is_goal(current_state):
-            return #RECONSTRUCT_PATH(parents, current)
-
+        if is_goal(cur_state):
+            return reconstruct_path(parents, cur_hashable_state, path)[::-1] # Reverse the path to get the correct order from start to goal
         
-    #     for each (next_state, cost) in GET_NEIGHBORS(current):
-
-    #         tentative_g = g_scores[current] + cost
-
-    #         if next_state not in g_scores
-    #            OR tentative_g < g_scores[next_state]:
-
-    #             g_scores[next_state] = tentative_g
-    #             parents[next_state] = current
-
-    #             f_score = tentative_g + heuristic(next_state)
-    #             insert or update next_state in open_set with f_score
-
-    # return FAILURE   // no solution found
-
-    
-    
-
-    
-    return [
-        CascadeAction(Coord(3, 3), Direction.Down)
-    ]
+        for action, next_state in get_next_states(cur_state):
+            hashable_next_state = make_hashable(next_state)
+            cost_to_next = cost_to_state[cur_hashable_state] + 1
+            if (hashable_next_state not in cost_to_state) or (cost_to_next < cost_to_state[hashable_next_state]):
+                cost_to_state[hashable_next_state] = cost_to_next
+                parents[hashable_next_state] = (cur_hashable_state, action)
+                index +=1
+                heapq.heappush(state_pq, (f_score(next_state, cost_to_state[hashable_next_state]), index, hashable_next_state))
+    return []
