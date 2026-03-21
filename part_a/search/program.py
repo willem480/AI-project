@@ -1,46 +1,32 @@
 # COMP30024 Artificial Intelligence, Semester 1 2026
 # Project Part A: Single Player Cascade
 
+import time
+
 from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, CascadeAction, PlayerColor
 from .utils import render_board
 import heapq
 
-# def heuristic(state : dict[Coord, CellState]):
-#     h2 = 0
-#     red = [] 
-#     blue = []
-#     for coord, cellstate in state.items():
-#         if(cellstate.color == PlayerColor.BLUE): #if color is blue
-#             blue.append(coord) #take blue
-
-#     for coord, cellstate in state:
-#         if(cellstate.color == PlayerColor.RED):
-#             red.append(coord)
-
-#     if(blue == None):
-#         return 0
+def heuristic(state : dict[Coord, CellState]):
     
-#     if(red == None):
-#         return float('inf')
-    
-#     #h1:THe number of blue stacks
-#     h1 = len(blue)
-#     #h2: The sum of cloest distance of blue stack to cloest red stack
-#     for node_blue in blue:
-#         min = 0
-#         for node_red in red:
-#            distance = abs(node_blue.r - node_red.r) + abs(node_blue.c - node_red.c)
-#            if (min < distance):
-#                min = distance  
-#         h2 += min
+    h1 = min(
+    len([i for i,j in list(state.keys())]),
+    len([j for i,j in list(state.keys())]))
 
-#     w1 = 0.6
-#     w2 = 0.8
+    blue = [i for i in list(state.keys()) if state[i].color == PlayerColor.BLUE]
+    red = [i for i in list(state.keys()) if state[i].color == PlayerColor.RED]
+    if (len(blue) > 0 and len(red) > 0):
+       h2 = min([min([distance(i, j) for j in blue]) for i in red])
+    else:
+        h2 = 0
 
-#     return  w1 * h1 + w2 * h2# Placeholder, replace with your heuristic calculation
+    return min(h1, h2)
+
+def distance(coord1 : Coord, coord2 : Coord):
+    return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
 
 def f_score(state, g_score):
-    return g_score 
+    return g_score + heuristic(state)
 
 def make_hashable(state : dict[Coord, CellState]):
     # Convert the state dictionary to a frozenset of items for hashing
@@ -55,8 +41,6 @@ def is_goal(state : dict[Coord, CellState]):
         if i.color == PlayerColor.BLUE:
             return False
     return True
-
-
 
 def get_next_states(state : dict[Coord, CellState]):
     result = []
@@ -168,7 +152,7 @@ def search(
         A list of actions (MoveAction, EatAction, or CascadeAction), or `None`
         if no solution is possible.
     """
-    
+    exe_time = time.time()
     state_pq = []
     path = []
     cost_to_state = {make_hashable(board): 0}
@@ -179,13 +163,16 @@ def search(
 
     while state_pq:
         priority, _, cur_hashable_state = heapq.heappop(state_pq)
-
-        if priority > cost_to_state[cur_hashable_state]:
-            continue  # Skip if we have already found a better path to this state
-
         cur_state = rev_hashable(cur_hashable_state)
 
+        if priority > cost_to_state[cur_hashable_state] + heuristic(cur_state):
+            continue  # Skip if we have already found a better path to this state
+
+        
+
         if is_goal(cur_state):
+            print(f"number of states explored: {len(parents)}")
+            print(f"Execution time: {time.time() - exe_time:.2f} seconds")
             return reconstruct_path(parents, cur_hashable_state, path)[::-1] # Reverse the path to get the correct order from start to goal
         
         for action, next_state in get_next_states(cur_state):
@@ -196,4 +183,7 @@ def search(
                 parents[hashable_next_state] = (cur_hashable_state, action)
                 index +=1
                 heapq.heappush(state_pq, (f_score(next_state, cost_to_state[hashable_next_state]), index, hashable_next_state))
+    print("No solution found.")
+    print(f"number of states explored: {len(cost_to_state)}")
+    print(f"Execution time: {time.time() - exe_time:.2f} seconds")
     return []
