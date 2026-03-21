@@ -41,7 +41,7 @@ def heuristic(state : dict[Coord, CellState]):
     blue = [i for i in list(state.keys()) if state[i].color == PlayerColor.BLUE]
     red = [i for i in list(state.keys()) if state[i].color == PlayerColor.RED]
     h2 = 0
-    h3 =0
+    h3 = []
 
     if (len(blue) > 0 and len(red) > 0):
         h2 = min([min([distance(i, j) for j in blue]) for i in red])
@@ -53,9 +53,12 @@ def heuristic(state : dict[Coord, CellState]):
                 if distance(i, j) < min_dist:
                     min_dist = distance(i, j)
                     stack = j
-            h3 += min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c))
-    
-    return h3
+            h3.append(min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c)))
+
+    if (len(h3) > 0):
+        return max(h3)
+    else:
+        return 0
 
 def distance(coord1 : Coord, coord2 : Coord):
     return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
