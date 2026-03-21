@@ -13,15 +13,15 @@ def min_steps_to_within_range(red_pos, n, blue_pos):
     bx, by = blue_pos
 
     best = float("inf")
-
-    # Horizontal ray through blue
+    # Finds the minimum steps to intercept the vertical or the horizontal ray through the middle point (blue stack) of length 2n
+    # Horizontal ray through blue of length n
     for k in range(n + 1):
         for tx, ty in ((bx + k, by), (bx - k, by)):
             d = abs(rx - tx) + abs(ry - ty)
             if d < best:
                 best = d
 
-    # Vertical ray through blue
+    # Vertical ray through blue of length n
     for k in range(n + 1):
         for tx, ty in ((bx, by + k), (bx, by - k)):
             d = abs(rx - tx) + abs(ry - ty)
@@ -41,24 +41,26 @@ def heuristic(state : dict[Coord, CellState]):
 
     blue = [i for i in list(state.keys()) if state[i].color == PlayerColor.BLUE]
     red = [i for i in list(state.keys()) if state[i].color == PlayerColor.RED]
+    max_height = sum(state[i].height for i in red)
 
     h2 = []
-
+    h3 = []
+   
     if (len(blue) > 0 and len(red) > 0):
-        for i in red:
-            # finds the closest blue stack 
-            min_dist = inf
-            stack = None
-            for j in blue:
-                if distance(i, j) < min_dist:
-                    min_dist = distance(i, j)
-                    stack = j
-
-            # calculates the minimum steps to get within (height of red stack -1 ) the closest blue stack 
-            h2.append(min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c)))
+        for r_stack in red:
+            min_distance = inf
+            min_stack = None
+            # calculates the minimum steps to get within (height of red stack -1 ) of any blue stack 
+            h2.append(min(min_steps_to_within_range((r_stack.r, r_stack.c), state[r_stack].height, (stack.r, stack.c)) for stack in blue))
+            for b_stack in blue:
+                if (distance(r_stack, b_stack) < min_distance):
+                    min_distance = distance(r_stack, b_stack)
+                    min_stack = b_stack
+            h3.append(min_steps_to_within_range((r_stack.r, r_stack.c), max_height, (min_stack.r, min_stack.c))) 
+            
     else:
         return 0
-    return min(h1, min(h2))
+    return sum(h3) #
     
 
 def distance(coord1 : Coord, coord2 : Coord):
@@ -90,7 +92,7 @@ def get_next_states(state : dict[Coord, CellState]):
                 if (action is not None):
                     result.append((action, new_state))
                 
-                if (cellstate.height > 1): #pre-require
+                if (cellstate.height > 1): 
                     action, new_state = stack_cascade(state, coord, direction)
                     if(action is not None):
                         result.append((action, new_state))
@@ -217,6 +219,8 @@ def search(
         for action, next_state in get_next_states(cur_state):
             hashable_next_state = make_hashable(next_state)
             cost_to_next = cost_to_state[cur_hashable_state] + 1
+            # if the next state has not been explored or we found a cheaper path to it 
+            # update the cost and parent information and add it to the priority queue
             if (hashable_next_state not in cost_to_state) or (cost_to_next < cost_to_state[hashable_next_state]):
                 cost_to_state[hashable_next_state] = cost_to_next
                 parents[hashable_next_state] = (cur_hashable_state, action)
