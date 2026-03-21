@@ -54,11 +54,10 @@ def heuristic(state : dict[Coord, CellState]):
                     min_dist = distance(i, j)
                     stack = j
             h3.append(min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c)))
-
-    if (len(h3) > 0):
-        return max(h3)
     else:
         return 0
+    return min(h1, max(h3))
+    
 
 def distance(coord1 : Coord, coord2 : Coord):
     return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
