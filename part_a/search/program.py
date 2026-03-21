@@ -11,19 +11,18 @@ import heapq
 def min_steps_to_within_range(red_pos, n, blue_pos):
     rx, ry = red_pos
     bx, by = blue_pos
-    max_offset = n - 1
 
     best = float("inf")
 
     # Horizontal ray through blue
-    for k in range(max_offset + 1):
+    for k in range(n + 1):
         for tx, ty in ((bx + k, by), (bx - k, by)):
             d = abs(rx - tx) + abs(ry - ty)
             if d < best:
                 best = d
 
     # Vertical ray through blue
-    for k in range(max_offset + 1):
+    for k in range(n + 1):
         for tx, ty in ((bx, by + k), (bx, by - k)):
             d = abs(rx - tx) + abs(ry - ty)
             if d < best:
@@ -34,29 +33,32 @@ def min_steps_to_within_range(red_pos, n, blue_pos):
 
 def heuristic(state : dict[Coord, CellState]):
     
+    # h1 find the number of rows and columns the blue stacks occup and take the minimum of them as the heuristic value
     h1 = min(
-    len([i for i,j in list(state.keys())]),
-    len([j for i,j in list(state.keys())]))
+        len([i for i,j in list(state.keys())]),
+        len([j for i,j in list(state.keys())])
+    )
 
     blue = [i for i in list(state.keys()) if state[i].color == PlayerColor.BLUE]
     red = [i for i in list(state.keys()) if state[i].color == PlayerColor.RED]
-    h2 = 0
-    h3 = []
+
+    h2 = []
 
     if (len(blue) > 0 and len(red) > 0):
-        h2 = min([min([distance(i, j) for j in blue]) for i in red])
-        
         for i in red:
+            # finds the closest blue stack 
             min_dist = inf
             stack = None
             for j in blue:
                 if distance(i, j) < min_dist:
                     min_dist = distance(i, j)
                     stack = j
-            h3.append(min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c)))
+
+            # calculates the minimum steps to get within (height of red stack -1 ) the closest blue stack 
+            h2.append(min_steps_to_within_range((i.r, i.c), state[i].height, (stack.r, stack.c)))
     else:
         return 0
-    return min(h1, max(h3))
+    return min(h1, min(h2))
     
 
 def distance(coord1 : Coord, coord2 : Coord):
