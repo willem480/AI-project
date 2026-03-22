@@ -1,7 +1,6 @@
 # COMP30024 Artificial Intelligence, Semester 1 2026
 # Project Part A: Single Player Cascade
 
-from math import inf
 import time
 
 from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, CascadeAction, PlayerColor
@@ -9,11 +8,11 @@ from .utils import render_board
 import heapq
 
 def heuristic(state : dict[Coord, CellState]):
-    vectors = [(v.r, v.c) for v in state.keys()]
-    h1 = min(len({v[0] for v in vectors}), len({v[1] for v in vectors}))
+    vectors = [(v.r, v.c) for v in state if state[v].color == PlayerColor.BLUE]
+    # The heuristic is the minimum of the number of unique rows and columns that contain blue stacks.
+    h = min(len({v[0] for v in vectors}), len({v[1] for v in vectors}))
 
-
-    return h1
+    return h
 
 def distance(coord1 : Coord, coord2 : Coord):
     return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
@@ -131,6 +130,20 @@ def reconstruct_path(parents, current, path):
 def search(
     board: dict[Coord, CellState]
 ) -> list[Action] | None:
+    """
+    This is the entry point for your submission. You should modify this
+    function to solve the search problem discussed in the Part A specification.
+    See `core.py` for information on the types being used here.
+
+    Parameters:
+        `board`: a dictionary representing the initial board state, mapping
+            coordinates to `CellState` instances (each with a `.color` and
+            `.height` attribute).
+
+    Returns:
+        A list of actions (MoveAction, EatAction, or CascadeAction), or `None`
+        if no solution is possible.
+    """
     exe_time = time.time()
     state_pq = []
     path = []
@@ -139,6 +152,7 @@ def search(
     index = 0
     heapq.heappush(state_pq, (f_score(board, 0), index, make_hashable(board)))
     print(render_board(board, ansi= True))
+    
     while state_pq:
         priority, _, cur_hashable_state = heapq.heappop(state_pq)
         cur_state = rev_hashable(cur_hashable_state)
@@ -150,7 +164,6 @@ def search(
 
         if is_goal(cur_state):
             print(f"number of states explored: {len(parents)}")
-            print(f"Number of steps taken: %d" % len(path))
             print(f"Execution time: {time.time() - exe_time:.2f} seconds")
             return reconstruct_path(parents, cur_hashable_state, path)[::-1] # Reverse the path to get the correct order from start to goal
         
@@ -166,6 +179,5 @@ def search(
                 heapq.heappush(state_pq, (f_score(next_state, cost_to_state[hashable_next_state]), index, hashable_next_state))
     print("No solution found.")
     print(f"number of states explored: {len(cost_to_state)}")
-    print("Number of steps taken: " + len(path))
     print(f"Execution time: {time.time() - exe_time:.2f} seconds")
     return 
