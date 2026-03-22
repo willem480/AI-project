@@ -12,7 +12,7 @@ def heuristic(state : dict[Coord, CellState]):
     # The heuristic is the minimum of the number of unique rows and columns that contain blue stacks.
     h = min(len({v[0] for v in vectors}), len({v[1] for v in vectors}))
 
-    return h
+    return 0
 
 def distance(coord1 : Coord, coord2 : Coord):
     return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
