@@ -30,38 +30,72 @@ def min_steps_to_within_range(red_pos, n, blue_pos):
 
     return best
 
+def count_components(vectors):
+    S = {(v.r, v.c) for v in vectors}
+
+    counted = set()
+    total = 0
+
+    for r, c in S:
+        if (r, c) in counted:
+            continue
+
+        # Check horizontal run
+        if (r, c+1) in S:
+            # Walk right to find full run
+            end = c
+            while (r, end+1) in S:
+                end += 1
+
+            # Mark all in this run
+            for x in range(c, end+1):
+                counted.add((r, x))
+
+            total += 1
+            continue
+
+        # Check vertical run
+        if (r+1, c) in S:
+            # Walk down to find full run
+            end = r
+            while (end+1, c) in S:
+                end += 1
+
+            # Mark all in this run
+            for x in range(r, end+1):
+                counted.add((x, c))
+
+            total += 1
+            continue
+
+        # Otherwise it's isolated
+        counted.add((r, c))
+        total += 1
+    return total
+
 
 def heuristic(state : dict[Coord, CellState]):
-    
-    # h1 find the number of rows and columns the blue stacks occup and take the minimum of them as the heuristic value
-    h1 = min(
-        len([i for i,j in list(state.keys())]),
-        len([j for i,j in list(state.keys())])
-    )
-
     blue = [i for i in list(state.keys()) if state[i].color == PlayerColor.BLUE]
     red = [i for i in list(state.keys()) if state[i].color == PlayerColor.RED]
     max_height = sum(state[i].height for i in red)
 
-    h2 = []
-    h3 = []
+    h = []
    
     if (len(blue) > 0 and len(red) > 0):
         for r_stack in red:
-            min_distance = inf
-            min_stack = None
-            # calculates the minimum steps to get within (height of red stack -1 ) of any blue stack 
-            h2.append(min(min_steps_to_within_range((r_stack.r, r_stack.c), state[r_stack].height, (stack.r, stack.c)) for stack in blue))
+            global_min = inf
             for b_stack in blue:
-                if (distance(r_stack, b_stack) < min_distance):
-                    min_distance = distance(r_stack, b_stack)
-                    min_stack = b_stack
-            h3.append(min_steps_to_within_range((r_stack.r, r_stack.c), max_height, (min_stack.r, min_stack.c))) 
-            
+                # calculates the minimum steps to get within the (maximum possible height of red stack) range of any blue stack 
+                local_min = min_steps_to_within_range((r_stack.r, r_stack.c),max_height, (b_stack.r, b_stack.c))
+                if local_min < global_min:
+                    global_min = local_min
+            h.append(global_min)  
     else:
         return 0
-    return sum(h3) #
     
+    h.sort()
+    # make sure to only sum the minimum number of red stacks needed to eat all blue clusters
+    return sum(h[:count_components(blue)])
 
 def distance(coord1 : Coord, coord2 : Coord):
     return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
@@ -201,7 +235,7 @@ def search(
     index = 0
     heapq.heappush(state_pq, (f_score(board, 0), index, make_hashable(board)))
     print(render_board(board, ansi= True))
-
+    
     while state_pq:
         priority, _, cur_hashable_state = heapq.heappop(state_pq)
         cur_state = rev_hashable(cur_hashable_state)
@@ -229,4 +263,4 @@ def search(
     print("No solution found.")
     print(f"number of states explored: {len(cost_to_state)}")
     print(f"Execution time: {time.time() - exe_time:.2f} seconds")
-    return []
+    return 
