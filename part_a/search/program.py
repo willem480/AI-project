@@ -247,6 +247,7 @@ def search(
 
         if is_goal(cur_state):
             print(f"number of states explored: {len(parents)}")
+            print(f"Number of steps taken: %d" % len(path))
             print(f"Execution time: {time.time() - exe_time:.2f} seconds")
             return reconstruct_path(parents, cur_hashable_state, path)[::-1] # Reverse the path to get the correct order from start to goal
         
@@ -262,5 +263,6 @@ def search(
                 heapq.heappush(state_pq, (f_score(next_state, cost_to_state[hashable_next_state]), index, hashable_next_state))
     print("No solution found.")
     print(f"number of states explored: {len(cost_to_state)}")
+    print("Number of steps taken: " + len(path))
     print(f"Execution time: {time.time() - exe_time:.2f} seconds")
     return 
