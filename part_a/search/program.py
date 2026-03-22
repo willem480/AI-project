@@ -8,94 +8,12 @@ from .core import CellState, Coord, Direction, Action, MoveAction, EatAction, Ca
 from .utils import render_board
 import heapq
 
-def min_steps_to_within_range(red_pos, n, blue_pos):
-    rx, ry = red_pos
-    bx, by = blue_pos
-
-    best = float("inf")
-    # Finds the minimum steps to intercept the vertical or the horizontal ray through the middle point (blue stack) of length 2n
-    # Horizontal ray through blue of length n
-    for k in range(n + 1):
-        for tx, ty in ((bx + k, by), (bx - k, by)):
-            d = abs(rx - tx) + abs(ry - ty)
-            if d < best:
-                best = d
-
-    # Vertical ray through blue of length n
-    for k in range(n + 1):
-        for tx, ty in ((bx, by + k), (bx, by - k)):
-            d = abs(rx - tx) + abs(ry - ty)
-            if d < best:
-                best = d
-
-    return best
-
-def count_components(vectors):
-    S = {(v.r, v.c) for v in vectors}
-
-    counted = set()
-    total = 0
-
-    for r, c in S:
-        if (r, c) in counted:
-            continue
-
-        # Check horizontal run
-        if (r, c+1) in S:
-            # Walk right to find full run
-            end = c
-            while (r, end+1) in S:
-                end += 1
-
-            # Mark all in this run
-            for x in range(c, end+1):
-                counted.add((r, x))
-
-            total += 1
-            continue
-
-        # Check vertical run
-        if (r+1, c) in S:
-            # Walk down to find full run
-            end = r
-            while (end+1, c) in S:
-                end += 1
-
-            # Mark all in this run
-            for x in range(r, end+1):
-                counted.add((x, c))
-
-            total += 1
-            continue
-
-        # Otherwise it's isolated
-        counted.add((r, c))
-        total += 1
-    return total
-
-
 def heuristic(state : dict[Coord, CellState]):
-    blue = [i for i in list(state.keys()) if state[i].color == PlayerColor.BLUE]
-    red = [i for i in list(state.keys()) if state[i].color == PlayerColor.RED]
-    max_height = sum(state[i].height for i in red)
+    vectors = [(v.r, v.c) for v in state.keys()]
+    h1 = min(len({v[0] for v in vectors}), len({v[1] for v in vectors}))
 
-    h = []
-   
-    if (len(blue) > 0 and len(red) > 0):
-        for r_stack in red:
-            global_min = inf
-            for b_stack in blue:
-                # calculates the minimum steps to get within the (maximum possible height of red stack) range of any blue stack 
-                local_min = min_steps_to_within_range((r_stack.r, r_stack.c),max_height, (b_stack.r, b_stack.c))
-                if local_min < global_min:
-                    global_min = local_min
-            h.append(global_min)  
-    else:
-        return 0
-    
-    h.sort()
-    # make sure to only sum the minimum number of red stacks needed to eat all blue clusters
-    return sum(h[:count_components(blue)])
+
+    return h1
 
 def distance(coord1 : Coord, coord2 : Coord):
     return abs(coord1.r - coord2.r) + abs(coord1.c - coord2.c)
@@ -213,20 +131,6 @@ def reconstruct_path(parents, current, path):
 def search(
     board: dict[Coord, CellState]
 ) -> list[Action] | None:
-    """
-    This is the entry point for your submission. You should modify this
-    function to solve the search problem discussed in the Part A specification.
-    See `core.py` for information on the types being used here.
-
-    Parameters:
-        `board`: a dictionary representing the initial board state, mapping
-            coordinates to `CellState` instances (each with a `.color` and
-            `.height` attribute).
-
-    Returns:
-        A list of actions (MoveAction, EatAction, or CascadeAction), or `None`
-        if no solution is possible.
-    """
     exe_time = time.time()
     state_pq = []
     path = []
@@ -235,7 +139,6 @@ def search(
     index = 0
     heapq.heappush(state_pq, (f_score(board, 0), index, make_hashable(board)))
     print(render_board(board, ansi= True))
-    
     while state_pq:
         priority, _, cur_hashable_state = heapq.heappop(state_pq)
         cur_state = rev_hashable(cur_hashable_state)
